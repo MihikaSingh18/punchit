@@ -1,69 +1,42 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
+import { useRouter } from "next/navigation"
 import Container from "@/components/Container"
 import Card from "@/components/Card"
 import Button from "@/components/Button"
 
 export default function CustomerLogin() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-    const rawRedirect = searchParams.get("redirect")
-    const redirectTo =
-      rawRedirect && rawRedirect.startsWith("/scan/")
-        ? rawRedirect
-        : "/customer/dashboard"
-
-
   const [email, setEmail] = useState("")
-  const [sent, setSent] = useState(false)
+  const router = useRouter()
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        router.replace(redirectTo)
-      }
-    })
-  }, [router, redirectTo])
-
-  const sendMagicLink = async () => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin + redirectTo
-      }
-    })
-
-    if (!error) setSent(true)
+  const login = async () => {
+    const { error } = await supabase.auth.signInWithOtp({ email })
+    if (!error) {
+      alert("Check your email to login.")
+    }
   }
+
+  supabase.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_IN") {
+      const storeId = localStorage.getItem("active_store_id")
+      router.push(storeId ? `/cafe/${storeId}` : "/customer/dashboard")
+    }
+  })
 
   return (
     <Container>
       <Card>
-        <h2 className="text-xl font-bold mb-4">
-          Register to earn rewards
-        </h2>
+        <h2 className="mb-4 text-lg font-semibold">Customer Login</h2>
 
-        {!sent ? (
-          <>
-            <input
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3 mb-4"
-            />
+        <input
+          className="border p-3 w-full rounded mb-4"
+          placeholder="Email"
+          onChange={e => setEmail(e.target.value)}
+        />
 
-            <Button onClick={sendMagicLink}>
-              Send Login Link
-            </Button>
-          </>
-        ) : (
-          <p className="text-green-600">
-            Login link sent. Check your email.
-          </p>
-        )}
+        <Button onClick={login}>Send Login Link</Button>
       </Card>
     </Container>
   )
