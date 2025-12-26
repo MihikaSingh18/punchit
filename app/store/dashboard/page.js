@@ -11,15 +11,15 @@ export default function StoreDashboard() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData?.session?.user) return
+      const { data: { session } } =
+        await supabase.auth.getSession()
 
-      const storeId = sessionData.session.user.id
+      if (!session?.user) return
 
       const { data } = await supabase
         .from("purchases")
-        .select("id, customer_id, created_at")
-        .eq("store_id", storeId)
+        .select("*")
+        .eq("store_id", session.user.id)
         .eq("status", "pending")
 
       setRequests(data || [])
@@ -28,34 +28,24 @@ export default function StoreDashboard() {
     load()
   }, [])
 
-  const approve = async (purchaseId, customerId) => {
-    const { data: sessionData } = await supabase.auth.getSession()
-    const storeId = sessionData.session.user.id
-
-    await supabase.from("purchases")
-      .update({ status: "approved" })
-      .eq("id", purchaseId)
-
-    await supabase.rpc("increment_customer_points", {
-      p_store_id: storeId,
-      p_customer_id: customerId
-    })
-
-    location.reload()
-  }
-
   return (
     <Container>
-      <h1 className="text-xl font-semibold mb-4">Pending Requests</h1>
+      <h2 className="text-2xl font-semibold mb-4">
+        Store Dashboard
+      </h2>
 
-      {requests.length === 0 && <p>No pending requests</p>}
+      {requests.length === 0 && (
+        <p className="text-sm text-gray-500">
+          No pending customer requests
+        </p>
+      )}
 
-      {requests.map(r => (
+      {requests.map((r) => (
         <Card key={r.id}>
-          <p>{r.customer_id}</p>
-          <Button onClick={() => approve(r.id, r.customer_id)}>
-            Approve
-          </Button>
+          <p className="text-sm mb-3">
+            Customer requested a credit
+          </p>
+          <Button>Approve</Button>
         </Card>
       ))}
     </Container>

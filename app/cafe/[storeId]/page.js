@@ -8,41 +8,27 @@ import Card from "@/components/Card"
 import Button from "@/components/Button"
 
 export default function CafeDashboard() {
-  const params = useParams()
-  const storeId = params.storeId
+  const { storeId } = useParams()
   const router = useRouter()
-
   const [store, setStore] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [requested, setRequested] = useState(false)
 
   useEffect(() => {
     if (!storeId) return
 
-    const init = async () => {
-      // ✅ CRITICAL: lock the active cafe
-      localStorage.setItem("active_store_id", storeId)
+    localStorage.setItem("active_store_id", storeId)
 
-      const { data, error } = await supabase
-        .from("stores")
-        .select("*")
-        .eq("id", storeId)
-        .single()
-
-      if (error || !data) {
-        alert("Invalid café QR")
-        return
-      }
-
-      setStore(data)
-      setLoading(false)
-    }
-
-    init()
+    supabase
+      .from("stores")
+      .select("*")
+      .eq("id", storeId)
+      .single()
+      .then(({ data }) => setStore(data))
   }, [storeId])
 
   const requestCredit = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { session } } =
+      await supabase.auth.getSession()
 
     if (!session?.user) {
       router.push("/customer/login")
@@ -52,59 +38,44 @@ export default function CafeDashboard() {
     await supabase.from("purchases").insert({
       store_id: storeId,
       customer_id: session.user.id,
-      status: "pending"
+      status: "pending",
     })
 
     setRequested(true)
   }
 
-  if (loading) {
-    return (
-      <Container>
-        <p className="text-center text-sm text-gray-500">
-          Loading café...
-        </p>
-      </Container>
-    )
-  }
+  if (!store) return null
 
   return (
     <Container>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#2E2E2E]">
-          {store.name}
-        </h1>
-        <p className="text-sm text-[#8B8B8B] mt-1">
-          Loyalty Rewards Program
-        </p>
-      </div>
+      <h1 className="text-2xl font-semibold mb-1">
+        {store.name}
+      </h1>
+      <p className="text-sm text-gray-500 mb-4">
+        Loyalty Rewards Program
+      </p>
 
       <Card>
-        <p className="text-sm text-[#8B8B8B] mb-2">
+        <p className="text-sm text-gray-500 mb-1">
           Your Progress
         </p>
 
-        <div className="flex items-end gap-2 mb-3">
-          <span className="text-3xl font-semibold text-[#6F4E37]">
-            0
-          </span>
-          <span className="text-sm text-[#8B8B8B]">
-            / {store.reward_threshold} visits
-          </span>
-        </div>
-
-        <p className="text-sm text-[#2E2E2E] mb-5">
-          Buy {store.reward_threshold} times → get {store.reward_description}
+        <p className="text-lg mb-3">
+          0 / {store.reward_threshold} visits
         </p>
 
-        <Button onClick={requestCredit} disabled={requested}>
+        <p className="text-sm mb-4">
+          Buy {store.reward_threshold} times → get{" "}
+          {store.reward_description}
+        </p>
+
+        <Button
+          onClick={requestCredit}
+          disabled={requested}
+        >
           {requested ? "Request Sent" : "Request Credit"}
         </Button>
       </Card>
-
-      <p className="text-xs text-center text-[#8B8B8B] mt-4">
-        Credits are added after café approval
-      </p>
     </Container>
   )
 }

@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #fff7f1;
-  color: #2e2e2e;
-  font-family: ui-sans-serif, system-ui, -apple-system;
+html, body {
+  padding: 0;
+  margin: 0;
 }
