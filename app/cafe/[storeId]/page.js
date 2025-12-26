@@ -8,7 +8,8 @@ import Card from "@/components/Card"
 import Button from "@/components/Button"
 
 export default function CafeDashboard() {
-  const { storeId } = useParams()
+  const params = useParams()
+  const storeId = params.storeId
   const router = useRouter()
 
   const [store, setStore] = useState(null)
@@ -19,7 +20,7 @@ export default function CafeDashboard() {
     if (!storeId) return
 
     const init = async () => {
-      // Save active cafe (CRITICAL – prevents collision)
+      // ✅ CRITICAL: lock the active cafe
       localStorage.setItem("active_store_id", storeId)
 
       const { data, error } = await supabase
@@ -60,15 +61,15 @@ export default function CafeDashboard() {
   if (loading) {
     return (
       <Container>
-        <p className="text-center text-sm text-gray-500">Loading café...</p>
+        <p className="text-center text-sm text-gray-500">
+          Loading café...
+        </p>
       </Container>
     )
   }
 
   return (
     <Container>
-
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-[#2E2E2E]">
           {store.name}
@@ -78,7 +79,6 @@ export default function CafeDashboard() {
         </p>
       </div>
 
-      {/* Rewards Card */}
       <Card>
         <p className="text-sm text-[#8B8B8B] mb-2">
           Your Progress
@@ -102,11 +102,9 @@ export default function CafeDashboard() {
         </Button>
       </Card>
 
-      {/* Status */}
       <p className="text-xs text-center text-[#8B8B8B] mt-4">
         Credits are added after café approval
       </p>
-
     </Container>
   )
 }
